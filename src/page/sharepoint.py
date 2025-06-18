@@ -32,7 +32,7 @@ def get_sharepoint_overview():
                        "Status",
                        "Status - uddybning",
                        "Projektleder"
-                FROM sharepoint_items_test_1
+                FROM sharepoint_handleplan_items
                 """
                 result = db_client.execute_sql(query)
                 columns = [
