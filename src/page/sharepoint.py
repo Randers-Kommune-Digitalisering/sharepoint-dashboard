@@ -13,7 +13,6 @@ def get_sharepoint_overview():
     with col_1:
         content_tabs = sac.tabs([
             sac.TabsItem('SharePoint Projekter', tag='SharePoint Projekter', icon='bi bi-card-list'),
-            sac.TabsItem('Sharepoint Liste info', tag='Sharepoint Liste info')
         ], color='dark', size='md', position='top', align='start', use_container_width=True)
 
     try:
