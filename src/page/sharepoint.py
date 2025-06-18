@@ -55,10 +55,42 @@ def get_sharepoint_overview():
         data = st.session_state.sharepoint_data
 
         if content_tabs == 'SharePoint Projekter':
-            project_titles = data["Title"].dropna().unique()
+            colf1, colf2, colf3 = st.columns(3)
+            with colf1:
+                afdeling_filter = st.selectbox(
+                    "Filtrer på Afdeling/delområde",
+                    options=["Alle"] + sorted(data["Afdeling/delområde"].dropna().unique().tolist()),
+                    help="Vælg afdeling for at filtrere"
+                )
+            with colf2:
+                fase_filter = st.selectbox(
+                    "Filtrer på Fase",
+                    options=["Alle"] + sorted(data["Fase"].dropna().unique().tolist()),
+                    help="Vælg fase for at filtrere"
+                )
+            with colf3:
+                status_filter = st.selectbox(
+                    "Filtrer på Status",
+                    options=["Alle"] + sorted(data["Status"].dropna().unique().tolist()),
+                    help="Vælg status for at filtrere"
+                )
+
+            filtered_data = data.copy()
+            if afdeling_filter != "Alle":
+                filtered_data = filtered_data[filtered_data["Afdeling/delområde"] == afdeling_filter]
+            if fase_filter != "Alle":
+                filtered_data = filtered_data[filtered_data["Fase"] == fase_filter]
+            if status_filter != "Alle":
+                filtered_data = filtered_data[filtered_data["Status"] == status_filter]
+
+            project_titles = filtered_data["Title"].dropna().unique()
+            if len(project_titles) == 0:
+                st.warning("Ingen projekter matcher dine filtre/søgning.")
+                st.stop()
+
             selected_project = st.selectbox('Vælg Sharepoint projekt', project_titles, help='Vælg projekt for at se detaljer')
 
-            project_details = data[data["Title"] == selected_project].iloc[0]
+            project_details = filtered_data[filtered_data["Title"] == selected_project].iloc[0]
 
             st.info(f"**Afdeling/delområde:** {project_details['Afdeling/delområde']}")
 
