@@ -66,9 +66,39 @@ def get_sharepoint_overview():
                     help="Vælg et projekt for at filtrere på titel"
                 )
 
+                colf1, colf2, colf3 = st.columns(3)
+                with colf1:
+                    forvaltning_filter = st.selectbox(
+                        "Filtrer på Forvaltning",
+                        options=["Alle"] + sorted(data["Forvaltning"].dropna().unique().tolist()),
+                        help="Vælg forvaltning for at filtrere"
+                    )
+                with colf2:
+                    fase_filter = st.selectbox(
+                        "Filtrer på Fase",
+                        options=["Alle"] + sorted(data["Fase"].dropna().unique().tolist()),
+                        help="Vælg fase for at filtrere"
+                    )
+                with colf3:
+                    status_filter = st.selectbox(
+                        "Filtrer på Status",
+                        options=["Alle"] + sorted(data["Status"].dropna().unique().tolist()),
+                        help="Vælg status for at filtrere"
+                    )
+
                 filtered_data = data.copy()
                 if selected_title_filter != "Alle":
                     filtered_data = filtered_data[filtered_data["Title"] == selected_title_filter]
+                if forvaltning_filter != "Alle":
+                    filtered_data = filtered_data[filtered_data["Forvaltning"] == forvaltning_filter]
+                if fase_filter != "Alle":
+                    filtered_data = filtered_data[filtered_data["Fase"] == fase_filter]
+                if status_filter != "Alle":
+                    filtered_data = filtered_data[filtered_data["Status"] == status_filter]
+
+                if filtered_data.empty:
+                    st.warning("Ingen projekter matcher dine filtre.")
+                    st.stop()
 
                 for i, row in filtered_data.iterrows():
                     status = str(row['Status']).strip().lower() if pd.notna(row['Status']) else "ukendt"
