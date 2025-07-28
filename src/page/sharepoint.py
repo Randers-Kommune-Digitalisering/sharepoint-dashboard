@@ -91,8 +91,29 @@ def get_sharepoint_overview():
                     projektleder_html = projektleder_name
 
                 st.markdown(
+                    """
+                    <style>
+                    .responsive-card {
+                        width: 100%;
+                        max-width: 600px;
+                        min-width: 220px;
+                        margin-left: auto;
+                        margin-right: auto;
+                        box-sizing: border-box;
+                    }
+                    @media (max-width: 700px) {
+                        .responsive-card {
+                            max-width: 98vw;
+                            padding: 0.5rem !important;
+                        }
+                    }
+                    </style>
+                    """,
+                    unsafe_allow_html=True
+                )
+                st.markdown(
                     f"""
-                    <div style="border: 1px solid #9E9E9E; border-left: 5px solid #9E9E9E; padding: 1rem; margin-bottom: 1rem; border-radius: 5px; background-color: #f8f4ed;">
+                    <div class="responsive-card" style="border: 1px solid #9E9E9E; border-left: 5px solid #9E9E9E; padding: 1rem; margin-bottom: 1rem; border-radius: 5px; background-color: #f8f4ed;">
                         <h4 style="margin: 0;">{row['Title']}</h4>
                         <p style="margin: 0.5rem 0;"><strong>Uddybning af Indsats:</strong> {row['Uddybning'] or 'Ikke angivet'}</p>
                         <div style="display: flex; justify-content: space-between;">
