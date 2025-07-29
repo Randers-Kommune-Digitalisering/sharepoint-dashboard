@@ -27,7 +27,7 @@ def get_sharepoint_overview():
                        "Teknologi",
                        "Projektleder_Name",
                        "Projektleder_Email"
-                FROM demooooo
+                FROM sharepoint_handleplan_items
                 """
                 result = db_client.execute_sql(query)
                 columns = [
