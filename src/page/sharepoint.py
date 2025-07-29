@@ -26,14 +26,17 @@ def get_sharepoint_overview():
                        "Uddybning",
                        "Teknologi",
                        "Projektleder_Name",
-                       "Projektleder_Email"
+                       "Projektleder_Email",
+                       "Projektejer_Name",
+                       "Projektejer_Email"
                 FROM sharepoint_handleplan_items
                 """
                 result = db_client.execute_sql(query)
                 columns = [
                     "Forvaltning", "Title",
                     "Uddybning", "Teknologi",
-                    "Projektleder_Name", "Projektleder_Email"
+                    "Projektleder_Name", "Projektleder_Email",
+                    "Projektejer_Name", "Projektejer_Email"
                 ]
                 if result is not None:
                     results.append(pd.DataFrame(result, columns=columns))
@@ -97,12 +100,28 @@ def get_sharepoint_overview():
             st.success(f"{len(filtered_data)} projekter fundet.")
 
             for i, row in filtered_data.iterrows():
-                projektleder_name = row['Projektleder_Name'] or 'Ikke angivet'
+                projektleder_name = row['Projektleder_Name'] or ''
                 projektleder_email = row['Projektleder_Email'] or ''
-                if projektleder_email and projektleder_name != 'Ikke angivet':
-                    projektleder_html = f'<a href="mailto:{projektleder_email}" title="{projektleder_email}">{projektleder_name}</a>'
+                projektejer_name = row.get('Projektejer_Name', '') or ''
+                projektejer_email = row.get('Projektejer_Email', '') or ''
+
+                if projektleder_name.strip():
+                    kontakt_label = "Projektleder"
+                    kontakt_name = projektleder_name
+                    kontakt_email = projektleder_email
+                elif projektejer_name.strip():
+                    kontakt_label = "Projektejer"
+                    kontakt_name = projektejer_name
+                    kontakt_email = projektejer_email
                 else:
-                    projektleder_html = projektleder_name
+                    kontakt_label = "Projektleder"
+                    kontakt_name = "Ikke angivet"
+                    kontakt_email = ""
+
+                if kontakt_email and kontakt_name != 'Ikke angivet':
+                    kontakt_html = f'<a href="mailto:{kontakt_email}" title="{kontakt_email}">{kontakt_name}</a>'
+                else:
+                    kontakt_html = kontakt_name
 
                 st.markdown(
                     f"""
@@ -111,7 +130,7 @@ def get_sharepoint_overview():
                         <p style="margin-top:0.5rem;">{row['Uddybning'] or 'Ikke angivet'}</p>
                         <hr>
                         <div style="display:flex; justify-content:space-between;">
-                            <span><strong>👤 Projektleder:</strong> {projektleder_html}</span>
+                            <span><strong>👤 {kontakt_label}:</strong> {kontakt_html}</span>
                             <span><strong>⚙️ Teknologi:</strong> {row['Teknologi'] or 'Ikke angivet'}</span>
                         </div>
                     </div>
