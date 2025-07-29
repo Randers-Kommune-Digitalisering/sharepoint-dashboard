@@ -2,6 +2,7 @@ import streamlit as st
 import streamlit_antd_components as sac
 import pandas as pd
 from utils.database_connection import get_sharepoint_db
+from utils.util import filter_forvaltning_options, starts_with_letter
 
 db_client = get_sharepoint_db()
 
@@ -12,7 +13,7 @@ def get_sharepoint_overview():
 
     with col_1:
         content_tabs = sac.tabs([
-            sac.TabsItem('SharePoint Projekter', tag='SharePoint Projekter', icon='bi bi-card-list'),
+            sac.TabsItem('Projektoversigt', tag='Teknologi- og Digitaliseringsprojekter i Randers Kommune', icon='bi bi-card-list'),
         ], color='dark', size='md', position='top', align='start', use_container_width=True)
 
     try:
@@ -26,7 +27,7 @@ def get_sharepoint_overview():
                        "Teknologi",
                        "Projektleder_Name",
                        "Projektleder_Email"
-                FROM sharepoint_handleplan_items
+                FROM demooooo
                 """
                 result = db_client.execute_sql(query)
                 columns = [
@@ -48,7 +49,7 @@ def get_sharepoint_overview():
 
         data = st.session_state.sharepoint_data
 
-        if content_tabs == 'SharePoint Projekter':
+        if content_tabs == 'Projektoversigt':
             project_titles = ["Alle"] + sorted(data["Title"].dropna().unique().tolist())
             selected_title_filter = st.selectbox(
                 "Søg på projekt",
@@ -58,11 +59,13 @@ def get_sharepoint_overview():
 
             colf1, colf2 = st.columns(2)
             with colf1:
+                forvaltning_options = filter_forvaltning_options(sorted(data["Forvaltning"].dropna().unique().tolist()))
                 forvaltning_filter = st.selectbox(
                     "Filtrer på Forvaltning",
-                    options=["Alle"] + sorted(data["Forvaltning"].dropna().unique().tolist()),
+                    options=["Alle"] + forvaltning_options,
                     help="Vælg forvaltning for at filtrere"
                 )
+
             with colf2:
                 teknologi_filter = st.selectbox(
                     "Filtrer på Teknologi",
@@ -82,6 +85,17 @@ def get_sharepoint_overview():
                 st.warning("Ingen projekter matcher dine filtre.")
                 st.stop()
 
+            filtered_data["Title"] = filtered_data["Title"].apply(lambda x: str(x).strip())
+
+            filtered_data = filtered_data.assign(
+                starts_with_letter=filtered_data["Title"].apply(starts_with_letter)
+            ).sort_values(
+                by=["starts_with_letter", "Title"],
+                ascending=[False, True]
+            ).drop(columns=["starts_with_letter"])
+
+            st.success(f"{len(filtered_data)} projekter fundet.")
+
             for i, row in filtered_data.iterrows():
                 projektleder_name = row['Projektleder_Name'] or 'Ikke angivet'
                 projektleder_email = row['Projektleder_Email'] or ''
@@ -91,34 +105,14 @@ def get_sharepoint_overview():
                     projektleder_html = projektleder_name
 
                 st.markdown(
-                    """
-                    <style>
-                    .responsive-card {
-                        width: 100%;
-                        max-width: 600px;
-                        min-width: 220px;
-                        margin-left: auto;
-                        margin-right: auto;
-                        box-sizing: border-box;
-                    }
-                    @media (max-width: 700px) {
-                        .responsive-card {
-                            max-width: 98vw;
-                            padding: 0.5rem !important;
-                        }
-                    }
-                    </style>
-                    """,
-                    unsafe_allow_html=True
-                )
-                st.markdown(
                     f"""
-                    <div class="responsive-card" style="border: 1px solid #9E9E9E; border-left: 5px solid #9E9E9E; padding: 1rem; margin-bottom: 1rem; border-radius: 5px; background-color: #f8f4ed;">
-                        <h4 style="margin: 0;">{row['Title']}</h4>
-                        <p style="margin: 0.5rem 0;"><strong>Uddybning af Indsats:</strong> {row['Uddybning'] or 'Ikke angivet'}</p>
-                        <div style="display: flex; justify-content: space-between;">
-                            <p style="margin: 0;"><strong>Projektleder:</strong> {projektleder_html}</p>
-                            <p style="margin: 0;"><strong>Teknologi:</strong> {row['Teknologi'] or 'Ikke angivet'}</p>
+                    <div style="background-color:#f8f4ed; padding:1rem; border-radius:10px; margin-bottom:1rem; border: 1px solid #9E9E9E; border-left: 5px solid #9E9E9E;">
+                        <span style="margin: 0; font-weight: bold; font-size: 1rem;">{row['Title']}</span>
+                        <p style="margin-top:0.5rem;">{row['Uddybning'] or 'Ikke angivet'}</p>
+                        <hr>
+                        <div style="display:flex; justify-content:space-between;">
+                            <span><strong>👤 Projektleder:</strong> {projektleder_html}</span>
+                            <span><strong>⚙️ Teknologi:</strong> {row['Teknologi'] or 'Ikke angivet'}</span>
                         </div>
                     </div>
                     """,
