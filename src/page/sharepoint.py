@@ -2,7 +2,7 @@ import streamlit as st
 import streamlit_antd_components as sac
 import pandas as pd
 from utils.database_connection import get_sharepoint_db
-from utils.util import filter_forvaltning_options, starts_with_letter
+from utils.util import filter_forvaltning_options, starts_with_letter, map_projekt_fase, map_forvaltning_forkortelse, filter_teknologi_options
 
 db_client = get_sharepoint_db()
 
@@ -28,7 +28,8 @@ def get_sharepoint_overview():
                        "Projektleder_Name",
                        "Projektleder_Email",
                        "Projektejer_Name",
-                       "Projektejer_Email"
+                       "Projektejer_Email",
+                       "Fase"
                 FROM sharepoint_handleplan_items
                 """
                 result = db_client.execute_sql(query)
@@ -36,7 +37,8 @@ def get_sharepoint_overview():
                     "Forvaltning", "Title",
                     "Uddybning", "Teknologi",
                     "Projektleder_Name", "Projektleder_Email",
-                    "Projektejer_Name", "Projektejer_Email"
+                    "Projektejer_Name", "Projektejer_Email",
+                    "Fase"
                 ]
                 if result is not None:
                     results.append(pd.DataFrame(result, columns=columns))
@@ -53,36 +55,39 @@ def get_sharepoint_overview():
         data = st.session_state.sharepoint_data
 
         if content_tabs == 'Projektoversigt':
-            project_titles = ["Alle"] + sorted(data["Title"].dropna().unique().tolist())
-            selected_title_filter = st.selectbox(
-                "Søg på projekt",
-                options=project_titles,
-                help="Vælg et projekt for at filtrere på titel"
-            )
+            with st.sidebar:
+                st.markdown("### 🔎 Filtrer projekter")
 
-            colf1, colf2 = st.columns(2)
-            with colf1:
+                search_query = st.text_input("Søg Projekt", value="", placeholder="Søg", label_visibility="collapsed")
+
                 forvaltning_options = filter_forvaltning_options(sorted(data["Forvaltning"].dropna().unique().tolist()))
                 forvaltning_filter = st.selectbox(
-                    "Filtrer på Forvaltning",
+                    "Vælg Forvaltning",
                     options=["Alle"] + forvaltning_options,
-                    help="Vælg forvaltning for at filtrere"
                 )
 
-            with colf2:
+                teknologi_options = filter_teknologi_options(sorted(data["Teknologi"].dropna().unique().tolist()))
                 teknologi_filter = st.selectbox(
-                    "Filtrer på Teknologi",
-                    options=["Alle"] + sorted(data["Teknologi"].dropna().unique().tolist()),
-                    help="Vælg teknologi for at filtrere"
+                    "Vælg Teknologi",
+                    options=["Alle"] + teknologi_options,
+                )
+
+                data["Fase_mapped"] = data["Fase"].apply(map_projekt_fase)
+                fase_options = sorted([f for f in data["Fase_mapped"].dropna().unique().tolist() if f != "Idé"])
+                fase_filter = st.selectbox(
+                    "Vælg Fase",
+                    options=["Alle"] + fase_options,
                 )
 
             filtered_data = data.copy()
-            if selected_title_filter != "Alle":
-                filtered_data = filtered_data[filtered_data["Title"] == selected_title_filter]
+            if search_query.strip():
+                filtered_data = filtered_data[filtered_data["Title"].str.contains(search_query, case=False, na=False)]
             if forvaltning_filter != "Alle":
                 filtered_data = filtered_data[filtered_data["Forvaltning"] == forvaltning_filter]
             if teknologi_filter != "Alle":
                 filtered_data = filtered_data[filtered_data["Teknologi"] == teknologi_filter]
+            if fase_filter != "Alle":
+                filtered_data = filtered_data[filtered_data["Fase_mapped"] == fase_filter]
 
             if filtered_data.empty:
                 st.warning("Ingen projekter matcher dine filtre.")
@@ -97,7 +102,10 @@ def get_sharepoint_overview():
                 ascending=[False, True]
             ).drop(columns=["starts_with_letter"])
 
-            st.success(f"{len(filtered_data)} projekter fundet.")
+            st.markdown(
+                f"<span style='background:#e0e0e0; border-radius:8px; padding:4px 12px; font-size:0.95rem; margin-left:8px;'>🔎 {len(filtered_data)} projekter fundet</span>",
+                unsafe_allow_html=True
+            )
 
             for i, row in filtered_data.iterrows():
                 projektleder_name = row['Projektleder_Name'] or ''
@@ -106,15 +114,12 @@ def get_sharepoint_overview():
                 projektejer_email = row.get('Projektejer_Email', '') or ''
 
                 if projektleder_name.strip():
-                    kontakt_label = "Projektleder"
                     kontakt_name = projektleder_name
                     kontakt_email = projektleder_email
                 elif projektejer_name.strip():
-                    kontakt_label = "Projektejer"
                     kontakt_name = projektejer_name
                     kontakt_email = projektejer_email
                 else:
-                    kontakt_label = "Projektleder"
                     kontakt_name = "Ikke angivet"
                     kontakt_email = ""
 
@@ -123,20 +128,26 @@ def get_sharepoint_overview():
                 else:
                     kontakt_html = kontakt_name
 
-                st.markdown(
-                    f"""
-                    <div style="background-color:#f8f4ed; padding:1rem; border-radius:10px; margin-bottom:1rem; border: 1px solid #9E9E9E; border-left: 5px solid #9E9E9E;">
-                        <span style="margin: 0; font-weight: bold; font-size: 1rem;">{row['Title']}</span>
-                        <p style="margin-top:0.5rem;">{row['Uddybning'] or 'Ikke angivet'}</p>
-                        <hr>
-                        <div style="display:flex; justify-content:space-between;">
-                            <span><strong>👤 {kontakt_label}:</strong> {kontakt_html}</span>
-                            <span><strong>⚙️ Teknologi:</strong> {row['Teknologi'] or 'Ikke angivet'}</span>
+                flex_content = f'<span><strong>👤</strong> {kontakt_html}</span>'
+                if row["Forvaltning"]:
+                    forvaltning_forkortet = map_forvaltning_forkortelse(row["Forvaltning"])
+                    flex_content += f'<span style="margin-left:1rem;"><strong>🏢</strong> {forvaltning_forkortet}</span>'
+                if row["Teknologi"]:
+                    flex_content += f'<span><strong>⚙️</strong> {row["Teknologi"]}</span>'
+
+                with st.expander(f"**{row['Title']}**"):
+                    st.markdown(
+                        f"""
+                        <div style="background-color:#f8f4ed; padding:1rem; border-radius:10px; margin-bottom:1rem; border: 1px solid #9E9E9E; border-left: 5px solid #9E9E9E;">
+                            <p style="margin-top:0.5rem;">{row['Uddybning'] or 'Ikke angivet'}</p>
+                            <hr>
+                            <div style="display:flex; justify-content:space-between;">
+                                {flex_content}
+                            </div>
                         </div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
+                        """,
+                        unsafe_allow_html=True
+                    )
 
     except Exception as e:
         st.error(f'An error occurred: {e}')
