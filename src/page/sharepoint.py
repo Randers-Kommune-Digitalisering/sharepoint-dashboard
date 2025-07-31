@@ -138,7 +138,8 @@ def get_sharepoint_overview():
                     flex_content += f'<span><strong>⚙️</strong> {row["Teknologi"]}</span>'
                 if row["Fase"]:
                     fase_icon = get_fase_icon(row["Fase"])
-                    flex_content += f'<span><strong>{fase_icon}</strong> {row["Fase"]}</span>'
+                    mapped_fase = map_projekt_fase(row["Fase"])
+                    flex_content += f'<span><strong>{fase_icon}</strong> {mapped_fase or row["Fase"]}</span>'
 
                 with st.expander(f"**{row['Title']}**"):
                     st.markdown(
