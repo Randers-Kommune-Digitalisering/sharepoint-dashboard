@@ -59,3 +59,12 @@ def filter_teknologi_options(options):
             continue
         filtered.append(opt)
     return filtered
+
+
+def get_fase_icon(fase):
+    icons = {
+        "Afventer/på pause": "⏸️",
+        "Afvist": "❌",
+        "I drift": "✅",
+    }
+    return icons.get(fase, "❓")
