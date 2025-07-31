@@ -2,7 +2,7 @@ import streamlit as st
 import streamlit_antd_components as sac
 import pandas as pd
 from utils.database_connection import get_sharepoint_db
-from utils.util import filter_forvaltning_options, starts_with_letter, map_projekt_fase, map_forvaltning_forkortelse, filter_teknologi_options
+from utils.util import filter_forvaltning_options, get_fase_icon, starts_with_letter, map_projekt_fase, map_forvaltning_forkortelse, filter_teknologi_options
 
 db_client = get_sharepoint_db()
 
@@ -89,6 +89,8 @@ def get_sharepoint_overview():
             if fase_filter != "Alle":
                 filtered_data = filtered_data[filtered_data["Fase_mapped"] == fase_filter]
 
+            filtered_data = filtered_data[filtered_data["Fase"] != "Idé"]
+
             if filtered_data.empty:
                 st.warning("Ingen projekter matcher dine filtre.")
                 st.stop()
@@ -134,6 +136,9 @@ def get_sharepoint_overview():
                     flex_content += f'<span style="margin-left:1rem;"><strong>🏢</strong> {forvaltning_forkortet}</span>'
                 if row["Teknologi"]:
                     flex_content += f'<span><strong>⚙️</strong> {row["Teknologi"]}</span>'
+                if row["Fase"]:
+                    fase_icon = get_fase_icon(row["Fase"])
+                    flex_content += f'<span><strong>{fase_icon}</strong> {row["Fase"]}</span>'
 
                 with st.expander(f"**{row['Title']}**"):
                     st.markdown(
