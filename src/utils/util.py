@@ -67,4 +67,4 @@ def get_fase_icon(fase):
         "Afvist": "❌",
         "I drift": "✅",
     }
-    return icons.get(fase, "❓")
+    return icons.get(fase, "🔄")
