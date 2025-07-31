@@ -29,7 +29,8 @@ def get_sharepoint_overview():
                        "Projektleder_Email",
                        "Projektejer_Name",
                        "Projektejer_Email",
-                       "Fase"
+                       "Fase",
+                       "Program eller konkret indsats"
                 FROM sharepoint_handleplan_items
                 """
                 result = db_client.execute_sql(query)
@@ -38,7 +39,7 @@ def get_sharepoint_overview():
                     "Uddybning", "Teknologi",
                     "Projektleder_Name", "Projektleder_Email",
                     "Projektejer_Name", "Projektejer_Email",
-                    "Fase"
+                    "Fase", "Program eller konkret indsats"
                 ]
                 if result is not None:
                     results.append(pd.DataFrame(result, columns=columns))
@@ -81,7 +82,10 @@ def get_sharepoint_overview():
 
             filtered_data = data.copy()
             if search_query.strip():
-                filtered_data = filtered_data[filtered_data["Title"].str.contains(search_query, case=False, na=False)]
+                filtered_data = filtered_data[
+                    filtered_data["Title"].str.contains(search_query, case=False, na=False) |
+                    filtered_data["Uddybning"].str.contains(search_query, case=False, na=False)
+                ]
             if forvaltning_filter != "Alle":
                 filtered_data = filtered_data[filtered_data["Forvaltning"] == forvaltning_filter]
             if teknologi_filter != "Alle":
@@ -90,6 +94,13 @@ def get_sharepoint_overview():
                 filtered_data = filtered_data[filtered_data["Fase_mapped"] == fase_filter]
 
             filtered_data = filtered_data[filtered_data["Fase"] != "Idé"]
+
+            filtered_data = filtered_data[
+                ~filtered_data["Program eller konkret indsats"].isin([
+                    "Handleplan på direktørområdet",
+                    "Tværgående handleplan"
+                ])
+            ]
 
             if filtered_data.empty:
                 st.warning("Ingen projekter matcher dine filtre.")
