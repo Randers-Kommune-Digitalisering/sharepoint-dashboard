@@ -89,7 +89,12 @@ def get_sharepoint_overview():
             if forvaltning_filter != "Alle":
                 filtered_data = filtered_data[filtered_data["Forvaltning"] == forvaltning_filter]
             if teknologi_filter != "Alle":
-                filtered_data = filtered_data[filtered_data["Teknologi"] == teknologi_filter]
+                if teknologi_filter == "Generativ AI":
+                    filtered_data = filtered_data[
+                        filtered_data["Teknologi"].str.contains("Generativ AI", case=False, na=False)
+                    ]
+                else:
+                    filtered_data = filtered_data[filtered_data["Teknologi"] == teknologi_filter]
             if fase_filter != "Alle":
                 filtered_data = filtered_data[filtered_data["Fase_mapped"] == fase_filter]
 

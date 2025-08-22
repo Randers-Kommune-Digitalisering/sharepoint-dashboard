@@ -47,17 +47,11 @@ def map_forvaltning_forkortelse(forvaltning):
 
 
 def filter_teknologi_options(options):
-    exclude = {
-        "Generativ AI, Chatbot",
-        "Generativ AI, IoT/sensorer",
-        "Chatbot, Generativ AI",
-        "Videoløsning, Generativ AI"
-    }
     filtered = []
     for opt in options:
         if not isinstance(opt, str):
             continue
-        if opt.strip() in exclude:
+        if "Generativ AI" in opt and "," in opt:
             continue
         filtered.append(opt)
     return filtered
