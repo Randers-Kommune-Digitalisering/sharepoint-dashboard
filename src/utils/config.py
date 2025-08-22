@@ -10,13 +10,9 @@ DEBUG = os.getenv('DEBUG', 'False') in ['True', 'true']
 PORT = os.getenv('PORT', '8080')
 POD_NAME = os.getenv('POD_NAME', 'pod_name_not_set')
 
-# Keycloack Auth
-# KEYCLOAK_URL = os.environ["KEYCLOAK_URL"].strip()
-# KEYCLOAK_REALM = os.environ["KEYCLOAK_REALM"].strip()
-# KEYCLOAK_CLIENT_ID = os.environ["KEYCLOAK_CLIENT_ID"].strip()
-
-# Database
-DB_HOST = os.environ.get('DB_HOST')
-DB_USER = os.environ.get('DB_USER')
-DB_PASS = os.environ.get('DB_PASS')
-DB_NAME = os.environ.get('DB_NAME')
+# Postgres DB
+SHAREPOINT_POSTGRES_DB_HOST = os.getenv("SHAREPOINT_POSTGRES_DB_HOST")
+SHAREPOINT_POSTGRES_DB_USER = os.getenv("SHAREPOINT_POSTGRES_DB_USER")
+SHAREPOINT_POSTGRES_DB_PASS = os.getenv("SHAREPOINT_POSTGRES_DB_PASS")
+SHAREPOINT_POSTGRES_DB_DATABASE = os.getenv("SHAREPOINT_POSTGRES_DB_DATABASE")
+SHAREPOINT_POSTGRES_DB_PORT = os.getenv("SHAREPOINT_POSTGRES_DB_PORT")
