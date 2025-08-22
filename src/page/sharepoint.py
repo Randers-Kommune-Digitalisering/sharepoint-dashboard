@@ -31,7 +31,7 @@ def get_sharepoint_overview():
                        "Projektejer_Email",
                        "Fase",
                        "Program eller konkret indsats"
-                FROM sharepoint_handleplan_items
+                FROM demooooo_v1
                 """
                 result = db_client.execute_sql(query)
                 columns = [
@@ -89,12 +89,9 @@ def get_sharepoint_overview():
             if forvaltning_filter != "Alle":
                 filtered_data = filtered_data[filtered_data["Forvaltning"] == forvaltning_filter]
             if teknologi_filter != "Alle":
-                if teknologi_filter == "Generativ AI":
-                    filtered_data = filtered_data[
-                        filtered_data["Teknologi"].str.contains("Generativ AI", case=False, na=False)
-                    ]
-                else:
-                    filtered_data = filtered_data[filtered_data["Teknologi"] == teknologi_filter]
+                filtered_data = filtered_data[
+                    filtered_data["Teknologi"].str.contains(teknologi_filter, case=False, na=False)
+                ]
             if fase_filter != "Alle":
                 filtered_data = filtered_data[filtered_data["Fase_mapped"] == fase_filter]
 
