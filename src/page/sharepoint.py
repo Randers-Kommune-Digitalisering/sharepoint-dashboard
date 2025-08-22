@@ -31,7 +31,7 @@ def get_sharepoint_overview():
                        "Projektejer_Email",
                        "Fase",
                        "Program eller konkret indsats"
-                FROM demooooo_v1
+                FROM sharepoint_handleplan_items
                 """
                 result = db_client.execute_sql(query)
                 columns = [
