@@ -72,11 +72,15 @@ def get_sharepoint_overview():
                 options=["Alle"] + teknologi_options,
             )
 
+            data = data.copy()
             data["Fase_mapped"] = data["Fase"].apply(map_projekt_fase)
             fase_options = sorted([f for f in data["Fase_mapped"].dropna().unique().tolist() if f != "Idé"])
+            custom_fase_options = ["Alle (÷ i drift)", "Alle"] + fase_options
+            # Sæt "Alle (÷ i drift)" som default
             fase_filter = st.selectbox(
                 "Vælg Fase",
-                options=["Alle"] + fase_options,
+                options=custom_fase_options,
+                index=0
             )
 
         filtered_data = data.copy()
@@ -85,13 +89,14 @@ def get_sharepoint_overview():
                 filtered_data["Title"].str.contains(search_query, case=False, na=False) |
                 filtered_data["Uddybning"].str.contains(search_query, case=False, na=False)
             ]
+        print(filtered_data)
+
         if forvaltning_filter != "Alle":
             filtered_data = filtered_data[filtered_data["Forvaltning"] == forvaltning_filter]
-        if teknologi_filter != "Alle":
-            filtered_data = filtered_data[
-                filtered_data["Teknologi"].str.contains(teknologi_filter, case=False, na=False)
-            ]
-        if fase_filter != "Alle":
+
+        if fase_filter == "Alle (÷ i drift)":
+            filtered_data = filtered_data[filtered_data["Fase_mapped"] != "I drift"]
+        elif fase_filter != "Alle":
             filtered_data = filtered_data[filtered_data["Fase_mapped"] == fase_filter]
 
         filtered_data = filtered_data[filtered_data["Fase"] != "Idé"]
