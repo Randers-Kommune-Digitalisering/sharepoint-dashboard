@@ -58,7 +58,7 @@ def get_custom_css():
             {
                 outline: 1px solid #b3c4a1;
             }
-            
+
             /* Expander custom styles (project list) */
             div[data-testid="stLayoutWrapper"] > .stExpander > details {
                 background-color: #b3c4a1;
