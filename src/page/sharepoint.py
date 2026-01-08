@@ -74,7 +74,7 @@ def get_sharepoint_overview():
             data = data.copy()
             data["Fase_mapped"] = data["Fase"].apply(map_projekt_fase)
             fase_options = sorted([f for f in data["Fase_mapped"].dropna().unique().tolist() if f != "Idé"])
-            custom_fase_options = ["Alle (÷ i drift)", "Alle"] + fase_options
+            custom_fase_options = ["Alle (÷ i drift, afvist)", "Alle"] + fase_options
             # Sæt "Alle (÷ i drift)" som default
             fase_filter = st.selectbox(
                 "Vælg Fase",
@@ -95,8 +95,8 @@ def get_sharepoint_overview():
         if teknologi_filter != "Alle":
             filtered_data = filtered_data[filtered_data["Teknologi"] == teknologi_filter]
 
-        if fase_filter == "Alle (÷ i drift)":
-            filtered_data = filtered_data[filtered_data["Fase_mapped"] != "I drift"]
+        if fase_filter == "Alle (÷ i drift, afvist)":
+            filtered_data = filtered_data[~filtered_data["Fase_mapped"].isin(["I drift", "Afvist"])]
         elif fase_filter != "Alle":
             filtered_data = filtered_data[filtered_data["Fase_mapped"] == fase_filter]
 
