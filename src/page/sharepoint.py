@@ -90,7 +90,12 @@ def get_sharepoint_overview():
             ]
 
         if forvaltning_filter != "Alle":
-            filtered_data = filtered_data[filtered_data["Forvaltning"] == forvaltning_filter]
+            filtered_data = filtered_data[
+                filtered_data["Forvaltning"]
+                .fillna("")
+                .astype(str)
+                .str.contains(forvaltning_filter, case=False, na=False)
+            ]
 
         if teknologi_filter != "Alle":
             filtered_data = filtered_data[filtered_data["Teknologi"] == teknologi_filter]
@@ -102,11 +107,14 @@ def get_sharepoint_overview():
 
         filtered_data = filtered_data[filtered_data["Fase"] != "Idé"]
 
+        # Vis kun "Konkret indsats" i projektoversigten og skjul alle andre values
+        prog_col = "Program eller konkret indsats"
         filtered_data = filtered_data[
-            ~filtered_data["Program eller konkret indsats"].isin([
-                "Handleplan på direktørområdet",
-                "Tværgående handleplan"
-            ])
+            filtered_data[prog_col]
+            .fillna("")
+            .astype(str)
+            .str.strip()
+            .eq("Konkret indsats")
         ]
 
         if filtered_data.empty:
