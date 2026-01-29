@@ -1,7 +1,15 @@
 import streamlit as st
 import pandas as pd
 from utils.database_connection import get_sharepoint_db
-from utils.util import filter_forvaltning_options, get_fase_icon, starts_with_letter, map_projekt_fase, map_forvaltning_forkortelse, filter_teknologi_options
+from utils.util import (
+    filter_forvaltning_options,
+    get_fase_icon,
+    starts_with_letter,
+    map_projekt_fase,
+    map_forvaltning_forkortelse,
+    get_unique_teknologi_options,
+    row_contains_teknologi,
+)
 from utils.markdown_elements import get_custom_css
 
 db_client = get_sharepoint_db()
@@ -15,9 +23,9 @@ def get_sharepoint_overview():
     )
 
     try:
-        if 'sharepoint_data' not in st.session_state:
+        if "sharepoint_data" not in st.session_state:
             results = []
-            with st.spinner('Loading SharePoint data...'):
+            with st.spinner("Loading SharePoint data..."):
                 query = """
                 SELECT "Forvaltning",
                        "Title",
@@ -39,6 +47,7 @@ def get_sharepoint_overview():
                     "Projektejer_Name", "Projektejer_Email",
                     "Fase", "Program eller konkret indsats"
                 ]
+
                 if result is not None:
                     results.append(pd.DataFrame(result, columns=columns))
                 else:
@@ -53,19 +62,44 @@ def get_sharepoint_overview():
 
         data = st.session_state.sharepoint_data
 
-        # if content_tabs == 'Projektoversigt':
+        prog_col = "Program eller konkret indsats"
+
         with st.sidebar:
             st.markdown("### 🔎 Filtrer projekter")
 
-            search_query = st.text_input("Søg Projekt", value="", placeholder="Søg", label_visibility="collapsed")
+            search_query = st.text_input(
+                "Søg Projekt",
+                value="",
+                placeholder="Søg",
+                label_visibility="collapsed"
+            )
 
-            forvaltning_options = filter_forvaltning_options(sorted(data["Forvaltning"].dropna().unique().tolist()))
+            forvaltning_options = filter_forvaltning_options(
+                sorted(data["Forvaltning"].dropna().unique().tolist())
+            )
             forvaltning_filter = st.selectbox(
                 "Vælg Forvaltning",
                 options=["Alle"] + forvaltning_options,
             )
 
-            teknologi_options = filter_teknologi_options(sorted(data["Teknologi"].dropna().unique().tolist()))
+            # Byg teknologi dropdown ud fra data der KUN er "Konkret indsats"
+            data_for_teknologi_options = data.copy()
+
+            data_for_teknologi_options = data_for_teknologi_options[
+                data_for_teknologi_options[prog_col]
+                .fillna("")
+                .astype(str)
+                .str.strip()
+                .eq("Konkret indsats")
+            ]
+
+            data_for_teknologi_options = data_for_teknologi_options[
+                data_for_teknologi_options["Fase"] != "Idé"
+            ]
+
+            teknologi_options = get_unique_teknologi_options(
+                data_for_teknologi_options["Teknologi"].dropna().astype(str).tolist()
+            )
             teknologi_filter = st.selectbox(
                 "Vælg Teknologi",
                 options=["Alle"] + teknologi_options,
@@ -75,7 +109,7 @@ def get_sharepoint_overview():
             data["Fase_mapped"] = data["Fase"].apply(map_projekt_fase)
             fase_options = sorted([f for f in data["Fase_mapped"].dropna().unique().tolist() if f != "Idé"])
             custom_fase_options = ["Alle (÷ i drift, afvist)", "Alle"] + fase_options
-            # Sæt "Alle (÷ i drift)" som default
+
             fase_filter = st.selectbox(
                 "Vælg Fase",
                 options=custom_fase_options,
@@ -83,6 +117,7 @@ def get_sharepoint_overview():
             )
 
         filtered_data = data.copy()
+
         if search_query.strip():
             filtered_data = filtered_data[
                 filtered_data["Title"].str.contains(search_query, case=False, na=False) |
@@ -98,7 +133,12 @@ def get_sharepoint_overview():
             ]
 
         if teknologi_filter != "Alle":
-            filtered_data = filtered_data[filtered_data["Teknologi"] == teknologi_filter]
+            filtered_data = filtered_data[
+                filtered_data["Teknologi"]
+                .fillna("")
+                .astype(str)
+                .apply(lambda s: row_contains_teknologi(s, teknologi_filter))
+            ]
 
         if fase_filter == "Alle (÷ i drift, afvist)":
             filtered_data = filtered_data[~filtered_data["Fase_mapped"].isin(["I drift", "Afvist"])]
@@ -108,7 +148,6 @@ def get_sharepoint_overview():
         filtered_data = filtered_data[filtered_data["Fase"] != "Idé"]
 
         # Vis kun "Konkret indsats" i projektoversigten og skjul alle andre values
-        prog_col = "Program eller konkret indsats"
         filtered_data = filtered_data[
             filtered_data[prog_col]
             .fillna("")
@@ -123,23 +162,24 @@ def get_sharepoint_overview():
 
         filtered_data["Title"] = filtered_data["Title"].apply(lambda x: str(x).strip())
 
-        filtered_data = filtered_data.assign(
-            starts_with_letter=filtered_data["Title"].apply(starts_with_letter)
-        ).sort_values(
-            by=["starts_with_letter", "Title"],
-            ascending=[False, True]
-        ).drop(columns=["starts_with_letter"])
+        filtered_data = (
+            filtered_data.assign(
+                starts_with_letter=filtered_data["Title"].apply(starts_with_letter)
+            )
+            .sort_values(by=["starts_with_letter", "Title"], ascending=[False, True])
+            .drop(columns=["starts_with_letter"])
+        )
 
         st.markdown(
             f"<div class='tag' style='margin-bottom: 2rem'>🔎 <b>{len(filtered_data)}</b> projekter fundet</div>",
             unsafe_allow_html=True
         )
 
-        for i, row in filtered_data.iterrows():
-            projektleder_name = row['Projektleder_Name'] or ''
-            projektleder_email = row['Projektleder_Email'] or ''
-            projektejer_name = row.get('Projektejer_Name', '') or ''
-            projektejer_email = row.get('Projektejer_Email', '') or ''
+        for _, row in filtered_data.iterrows():
+            projektleder_name = row["Projektleder_Name"] or ""
+            projektleder_email = row["Projektleder_Email"] or ""
+            projektejer_name = row.get("Projektejer_Name", "") or ""
+            projektejer_email = row.get("Projektejer_Email", "") or ""
 
             if projektleder_name.strip():
                 kontakt_name = projektleder_name
@@ -151,7 +191,7 @@ def get_sharepoint_overview():
                 kontakt_name = "Ikke angivet"
                 kontakt_email = ""
 
-            if kontakt_email and kontakt_name != 'Ikke angivet':
+            if kontakt_email and kontakt_name != "Ikke angivet":
                 kontakt_html = f'<a href="mailto:{kontakt_email}" title="{kontakt_email}">{kontakt_name}</a>'
             else:
                 kontakt_html = kontakt_name

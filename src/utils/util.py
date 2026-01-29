@@ -46,17 +46,6 @@ def map_forvaltning_forkortelse(forvaltning):
     return mapping.get(forvaltning, forvaltning)
 
 
-def filter_teknologi_options(options):
-    filtered = []
-    for opt in options:
-        if not isinstance(opt, str):
-            continue
-        if "Generativ AI" in opt and "," in opt:
-            continue
-        filtered.append(opt)
-    return filtered
-
-
 def get_fase_icon(fase):
     icons = {
         "Afventer/på pause": "⏸️",
@@ -64,3 +53,20 @@ def get_fase_icon(fase):
         "I drift": "✅",
     }
     return icons.get(fase, "🔄")
+
+
+def tokenize_teknologier(value):
+    if not isinstance(value, str):
+        return []
+    return [t.strip() for t in re.split(r"\s*,\s*", value.strip()) if t.strip()]
+
+
+def get_unique_teknologi_options(teknologi_values):
+    unique = set()
+    for v in teknologi_values:
+        unique.update(tokenize_teknologier(v))
+    return sorted(unique, key=str.casefold)
+
+
+def row_contains_teknologi(value, teknologi):
+    return teknologi in tokenize_teknologier(value)
